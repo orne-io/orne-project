@@ -3,66 +3,63 @@ const { ethers } = require("hardhat");
 async function main() {
   const [deployer] = await ethers.getSigners();
   
-  console.log("=== DÉPLOIEMENT SUR ARBITRUM ===");
-  console.log("Déploiement avec le compte:", deployer.address);
-  console.log("Solde du compte:", (await deployer.getBalance()).toString());
+  console.log("=== DEPLOIEMENT SUR ARBITRUM ===");
+  console.log("Deploiement avec le compte:", deployer.address);
   
-  // Vérifier qu'on a assez d'ETH
-  const balance = await deployer.getBalance();
-  const minBalance = ethers.utils.parseEther("0.01"); // 0.01 ETH minimum
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log("Solde du compte:", ethers.formatEther(balance), "ETH");
   
-  if (balance.lt(minBalance)) {
-    throw new Error("Solde insuffisant ! Il faut au moins 0.01 ETH sur Arbitrum");
+  const minBalance = ethers.parseEther("0.001");
+  
+  if (balance < minBalance) {
+    throw new Error("Solde insuffisant ! Il faut au moins 0.001 ETH sur Arbitrum");
   }
 
-  // Déployer le token ORNE
-  console.log("\n1. Déploiement du token ORNE...");
+  console.log("\n1. Deploiement du token ORNE...");
   const ORNEToken = await ethers.getContractFactory("ORNEToken");
   const orneToken = await ORNEToken.deploy();
-  await orneToken.deployed();
-  console.log("✅ ORNE Token déployé à:", orneToken.address);
+  
+  await orneToken.waitForDeployment();
+  const orneTokenAddress = await orneToken.getAddress();
+  console.log("Token ORNE deploye a:", orneTokenAddress);
 
-  // Attendre quelques confirmations
-  console.log("⏳ Attente de 5 confirmations...");
-  await orneToken.deployTransaction.wait(5);
-
-  // Déployer le staking vault
-  console.log("\n2. Déploiement du Staking Vault...");
+  console.log("\n2. Deploiement du Staking Vault...");
   const ORNEStakingVault = await ethers.getContractFactory("ORNEStakingVault");
-  const stakingVault = await ORNEStakingVault.deploy(orneToken.address);
-  await stakingVault.deployed();
-  console.log("✅ Staking Vault déployé à:", stakingVault.address);
+  const stakingVault = await ORNEStakingVault.deploy(orneTokenAddress);
+  
+  await stakingVault.waitForDeployment();
+  const stakingVaultAddress = await stakingVault.getAddress();
+  console.log("Staking Vault deploye a:", stakingVaultAddress);
 
-  // Attendre quelques confirmations
-  console.log("⏳ Attente de 5 confirmations...");
-  await stakingVault.deployTransaction.wait(5);
+  console.log("\n=== DEPLOIEMENT TERMINE ===");
+  console.log("ORNE Token:", orneTokenAddress);
+  console.log("Staking Vault:", stakingVaultAddress);
+  console.log("Voir sur Arbiscan:");
+  console.log("https://arbiscan.io/address/" + orneTokenAddress);
+  console.log("https://arbiscan.io/address/" + stakingVaultAddress);
 
-  // Afficher les informations finales
-  console.log("\n=== DÉPLOIEMENT TERMINÉ ===");
-  console.log("🎉 Tous les contrats ont été déployés avec succès !");
-  console.log("\nADRESSES DES CONTRATS:");
-  console.log("ORNE Token:", orneToken.address);
-  console.log("Staking Vault:", stakingVault.address);
-  console.log("\nExplorateur Arbitrum:");
-  console.log("https://arbiscan.io/address/" + orneToken.address);
-  console.log("https://arbiscan.io/address/" + stakingVault.address);
+  const finalBalance = await ethers.provider.getBalance(deployer.address);
+  const deploymentCost = balance - finalBalance;
+  console.log("\nCout du deploiement:", ethers.formatEther(deploymentCost), "ETH");
 
-  // Sauvegarder dans un fichier
   const fs = require('fs');
   const addresses = {
     network: "arbitrum",
+    chainId: 42161,
     timestamp: new Date().toISOString(),
+    deployer: deployer.address,
+    deploymentCost: ethers.formatEther(deploymentCost),
     contracts: {
-      ORNEToken: orneToken.address,
-      ORNEStakingVault: stakingVault.address
+      ORNEToken: orneTokenAddress,
+      ORNEStakingVault: stakingVaultAddress
     }
   };
   
   fs.writeFileSync('deployed-addresses.json', JSON.stringify(addresses, null, 2));
-  console.log("\n📄 Adresses sauvegardées dans deployed-addresses.json");
+  console.log("\nAdresses sauvegardees dans deployed-addresses.json");
 }
 
 main().catch((error) => {
-  console.error("❌ Erreur lors du déploiement:", error);
+  console.error("Erreur lors du deploiement:", error);
   process.exitCode = 1;
 });
