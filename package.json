@@ -1,16 +1,24 @@
 {
-  "name": "orne-contracts",
+  "name": "orne-arbitrum-contracts",
   "version": "1.0.0",
-  "description": "Smart contracts ORNE Token et Staking Vault",
+  "description": "ORNE Token et Staking Vault sur Arbitrum",
   "main": "index.js",
   "scripts": {
     "compile": "hardhat compile",
-    "deploy": "hardhat run scripts/deploy.js",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network arbitrumSepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network arbitrumOne",
+    "verify:testnet": "hardhat run scripts/verify.js --network arbitrumSepolia",
+    "verify:mainnet": "hardhat run scripts/verify.js --network arbitrumOne"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.0",
+    "@openzeppelin/contracts": "^4.9.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@nomicfoundation/hardhat-verify": "^1.1.1",
     "hardhat": "^2.19.0",
-    "@nomicfoundation/hardhat-toolbox": "^3.0.0"
+    "dotenv": "^16.3.1"
   }
 }
